@@ -76,6 +76,15 @@
 
         let lasers = [];
         let enemies = [];
+        let stars=[];
+        for(let i=0; i<75;i++){
+            stars.push({
+                x: Math.random() * canvas.width,
+                y:Math.random() *canvas.height,
+                size: Math.random() * 2 + 1,
+                speed: Math.random() * 1 + 0.5
+            });
+        }
 
         window.addEventListener("keydown", (e) => { keys[e.key.toLowerCase()] = true; });
         window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
@@ -118,6 +127,14 @@
 
         function update() {
             handleInput();
+            for(let star of stars){
+                star.y += star.speed;
+
+                if(star.y > canvas.height){
+                    star.y = 0;
+                    star.x = Math.random() * canvas.width;
+                }
+            }
 
             for (let i = lasers.length - 1; i >= 0; i--) {
                 lasers[i].y -= lasers[i].speed;
@@ -167,7 +184,12 @@
         }
 
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle="rgba(0,0,0,0.3)";
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = "rgba(255,255,255,0.8)";
+            for(let star of stars){
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+            }
 
             ctx.fillStyle = "cyan";
             ctx.beginPath();
@@ -186,6 +208,7 @@
             for (let i = 0; i < enemies.length; i++) {
                 ctx.fillRect(enemies[i].x, enemies[i].y, enemies[i].width, enemies[i].height);
             }
+            
         }
 
         function gameLoop() {
