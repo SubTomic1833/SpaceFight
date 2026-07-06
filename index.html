@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <title>Simple Space Shooter</title>
     <style>
         body {
             background: radial-gradient(circle at center, #151515 0%, #090909 70%, #000 100%);
             color: white;
-            font-family: sans-serif;
+            font-family: 'Press Start 2P', monospace;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -17,13 +18,16 @@
         }
 
         #score {
-            font-size: 32px;
-            color:#00ffcc;
-            margin-bottom: 10px;
-            text-shadow:
-                0 0 5px #00ffff,
-                0 0 12px #00ffff,
-                0 0 20px #00ffff;
+            font-size: 18px;
+            font-family: 'Press Start 2P', monospace;
+            color: #00ffcc;
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px #00ffff;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px 14px;
+            border: 1px solid #00ffcc;
+            border-radius: 6px;
+            margin: 6px;
         }
 
         canvas {
@@ -50,15 +54,45 @@
                 inset 0 0 12px rgba(0,255,255,0.2)
         }
         #wave{
-            font-size:20px;
-            color:#ffcc00;
-            margin-bottom:10px;
-            text-shadow:0 0 10px #ffcc00;
+            font-size: 18px;
+            font-family: 'Press Start 2P', monospace;
+            color: #00ffcc;
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px #00ffff;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px 14px;
+            border: 1px solid #00ffcc;
+            border-radius: 6px;
+            margin: 6px;
+        }
+        #title{
+            font-size:28px;
+            font-family:'Press Start 2P', monospace;
+            color: #ff00ff;
+            letter-spacing:3px;
+            text-shadow:
+                0 0 8px #ff00ff,
+                0 0 16px #00ffff,
+                0 0 24px #ff00ff;
+            
+            margin-bottom: 10px;
+            text-align: center;
+            animation: glowPulse 1.5s infinite alternate;
+        }
+        @keyframes glowPulse{
+            from{
+                transform: scale(1);
+                filter:brightness(1);
+            }
+            to{
+                transform:scale(1.05);
+                filter:brightness(1.4);
+            }
         }
     </style>
 </head>
 <body>
-
+    <div id="title">SPACEFIGHT</div>
     <div id="score">Score: 0</div>
     <div id="wave">Wave: 1</div>
     <div id="gameFrame">
@@ -89,6 +123,13 @@
         let enemies = [];
         let stars=[];
         let particles=[];
+        let powerUps=[];
+        let rapidFire=false;
+        let doubleLaser=false;
+        let shield=false;
+        let rapidFireTime=0;
+        let doubleLaserTime=0;
+        let shieldTime=0;
         for(let i=0; i<75;i++){
             stars.push({
                 x: Math.random() * canvas.width,
@@ -153,6 +194,18 @@
                     color: Math.random()>0.5 ? "#ff6600" : "#ffff66"
                 });
             }
+            if(Math.random()<0.15){
+                const types=["rapid", "double", "shield"];
+                const type=types[Math.floor(Math.random()*types.length)];
+
+                powerUps.push({
+                    x:x,
+                    y:y,
+                    type:type,
+                    size:12,
+                    speed:2
+                });
+            }
         }
         function update() {
             handleInput();
@@ -183,7 +236,13 @@
                 lasers[i].y -= lasers[i].speed;
                 if (lasers[i].y < 0) lasers.splice(i, 1);
             }
-
+            for (let i = powerUps.length - 1; i >= 0; i--) {
+                const p = powerUps[i];
+                p.y += p.speed;
+                if (p.y > canvas.height) {
+                    powerUps.splice(i, 1);
+                }
+            }
             let changeDirection = false;
             for (let i = 0; i < enemies.length; i++) {
                 enemies[i].x += enemies[i].speedX;
@@ -237,7 +296,28 @@
                     particles.splice(i,1);
                 }
             }
-
+            for(let i=powerUps.length-1;i >= 0; i--){
+                const p=powerUps[i];
+                p.y+=p.speed;
+                if(p.x > player.x - player.size &&p.x < player.x + player.size &&p.y > player.y - player.size &&p.y < player.y + player.size){
+                    if(p.type==="rapid"){
+                        rapidFire=true;
+                        rapidFireTime=600;
+                    }
+                    if(p.type==="double"){
+                        doubleLaser=true;
+                        doubleLaserTime=600;
+                    }
+                    if(p.type==="shield"){
+                        shield=true;
+                        shieldTime=600;
+                    }
+                    powerUps.splice(i,1);
+                }
+                if(p.y > canvas.height){
+                    powerUps.splice(i,1);
+                }
+            }
             if (enemies.length === 0 && !waveInProgress) {
                 waveInProgress=true;
                 waveDropping=true;
@@ -279,7 +359,14 @@
             ctx.lineTo(player.x + player.size, player.y + player.size);
             ctx.closePath();
             ctx.fill();
-
+            for (let p of powerUps) {
+                if (p.type === "rapid") ctx.fillStyle = "blue";
+                if (p.type === "double") ctx.fillStyle = "green";
+            if (p.type === "shield") ctx.fillStyle = "yellow";
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
             ctx.fillStyle = "yellow";
             for (let i = 0; i < lasers.length; i++) {
                 ctx.fillRect(lasers[i].x - 2, lasers[i].y, 4, 10);
