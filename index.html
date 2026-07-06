@@ -88,6 +88,7 @@
         let lasers = [];
         let enemies = [];
         let stars=[];
+        let particles=[];
         for(let i=0; i<75;i++){
             stars.push({
                 x: Math.random() * canvas.width,
@@ -139,7 +140,20 @@
                 });
             }
         }
-
+        function spawnExplosion(x,y){
+            for(let i=0; i<12; i++){
+                console.log("Explosion spawned");
+                particles.push({
+                    x:x,
+                    y:y,
+                    vx:(Math.random()-0.5)*4,
+                    vy:(Math.random()-0.5)*4,
+                    life:30,
+                    size:Math.random()*3+2,
+                    color: Math.random()>0.5 ? "#ff6600" : "#ffff66"
+                });
+            }
+        }
         function update() {
             handleInput();
             if(waveDropping){
@@ -190,19 +204,37 @@
             }
 
             for (let l = lasers.length - 1; l >= 0; l--) {
+                if (!lasers[l]) continue;
                 for (let e = enemies.length - 1; e >= 0; e--) {
+                    if (!enemies[e]) continue;
                     let laser = lasers[l];
                     let enemy = enemies[e];
-
-                    if (laser && laser.x > enemy.x && laser.x < enemy.x + enemy.width &&
-                        laser.y > enemy.y && laser.y < enemy.y + enemy.height) {
-                        
+                    if (laser.x > enemy.x && laser.x < enemy.x + enemy.width && laser.y > enemy.y && laser.y < enemy.y + enemy.height) {
+                        spawnExplosion(
+                            enemy.x + enemy.width / 2,
+                            enemy.y + enemy.height / 2
+                        );
                         enemies.splice(e, 1);
                         lasers.splice(l, 1);
                         score += 10;
                         scoreDisplay.innerText = "Score: " + score;
                         break;
                     }
+                }
+            }
+            for(let i=particles.length-1; i>=0;i--){
+                const p = particles[i];
+                if(!p || typeof p.x !== "number" || typeof p.vx !== "number"){
+                    particles.splice(i,1);
+                    continue;
+                }
+
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+
+                if(p.life <= 0){
+                    particles.splice(i,1);
                 }
             }
 
@@ -257,6 +289,13 @@
             for (let i = 0; i < enemies.length; i++) {
                 ctx.fillRect(enemies[i].x, enemies[i].y, enemies[i].width, enemies[i].height);
             }
+            ctx.fillStyle="orange";
+            for(let p of particles){
+                ctx.globalAlpha=p.life/30;
+                ctx.fillStyle=p.color;
+                ctx.fillRect(p.x,p.y,p.size,p.size);
+            }
+            ctx.globalAlpha=1;
             ctx.restore();
         }
 
