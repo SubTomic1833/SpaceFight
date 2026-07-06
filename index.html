@@ -74,7 +74,10 @@
         let score = 0;
         let wave = 1;
         let keys = {};
-
+        let waveInProgress=false;
+        let shakeTime=0;
+        let shakePower=0;
+        let waveDropping = false;
         const player = {
             x: 300,
             y: 550,
@@ -102,7 +105,7 @@
             let cols = 6;
             let enemyWidth = 30;
             let enemyHeight = 20;
-            let currentSpeed = 1 + (wave * 0.5);
+            let currentSpeed = 1 + (wave * 0.3);
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
@@ -185,16 +188,32 @@
                 }
             }
 
-            if (enemies.length === 0) {
+            if (enemies.length === 0 && !waveInProgress) {
+                waveInProgress=true;
                 wave++;
                 waveDisplay.innerText="Wave: " +wave;
+                shakeTime=30;
+                shakePower=18;
                 setTimeout(() => {
                     spawnEnemies();
+                    waveInProgress=false;
                 }, 400)
             }
         }
 
         function draw() {
+            let shakeX=0;
+            let shakeY=0;
+
+            if(shakeTime>0){
+                shakeX=(Math.random()-0.5)*shakePower;
+                shakeY=(Math.random()-0.5)*shakePower;
+
+                shakeTime--;
+                shakePower *= 0.9;
+            }
+            ctx.save();
+            ctx.translate(shakeX,shakeY);
             ctx.fillStyle="rgba(0,0,0,0.3)";
             ctx.fillRect(0,0,canvas.width,canvas.height);
             ctx.fillStyle = "rgba(255,255,255,0.8)";
@@ -219,7 +238,7 @@
             for (let i = 0; i < enemies.length; i++) {
                 ctx.fillRect(enemies[i].x, enemies[i].y, enemies[i].width, enemies[i].height);
             }
-            
+            ctx.restore();
         }
 
         function gameLoop() {
